@@ -514,15 +514,45 @@ function getCtx(){
   return _actx;
 }
 
-function ttsURL(text){
-  const v=$('#voice').value||'onyx';
-  return 'https://text.pollinations.ai/'+encodeURIComponent((text||'').slice(0,480))+'?model=openai-audio&voice='+v;
+// Mapa de vozes ElevenLabs (multilingual v2)
+const ELEVEN_VOICES = {
+  'onyx':    'pNInz6obpgDQGcFmaJgB', // Adam — grave masculin
+  'nova':    'EXAVITQu4vr4xnSDxMaL', // Bella — femme naturelle
+  'echo':    'VR6AewLTigWG4xSOukaG', // Arnold
+  'fable':   'flq6f7ib4F1Cvxo8bZ4F', // Michael
+  'alloy':   'ErXwobaYiN019PkySvjV', // Antoni
+  'shimmer': 'MF3mGyEYCl7XYWbV9V6O'  // Elli — femme douce
+};
+function ttsURL(text){ return null; } // não usado com ElevenLabs
+async function fetchElevenLabs(text){
+  if(!text) return null;
+  const voiceId = ELEVEN_VOICES[$('#voice').value||'onyx'] || ELEVEN_VOICES['onyx'];
+  try{
+    const r = await fetch('/api/tts', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({text: text.replace(/\*/g,''), voiceId})
+    });
+    if(!r.ok) return null;
+    const ab = await r.arrayBuffer();
+    if(ab.byteLength < 1000) return null;
+    const actx = getCtx(); if(!actx) return null;
+    const buf = await actx.decodeAudioData(ab);
+    return buf;
+  }catch(e){ return null; }
 }
 
 async function fetchVoice(text, tries){
   if(!text) return null; tries=tries||0;
+  // Tentar ElevenLabs primeiro
+  try{
+    const buf = await fetchElevenLabs(text);
+    if(buf && buf.duration>0.1) return buf;
+  }catch(e){}
+  // Fallback: Pollinations
   const actx=getCtx(); if(!actx) return null;
-  const u=ttsURL(text)+(tries?('&r='+Date.now()):'');
+  const v=$('#voice').value||'onyx';
+  const u='https://text.pollinations.ai/'+encodeURIComponent(text.slice(0,480))+'?model=openai-audio&voice='+v+(tries?('&r='+Date.now()):'');
   const ctrl=new AbortController();
   const killer=setTimeout(()=>ctrl.abort(), 24000);
   try{
