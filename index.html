@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Corvus Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0a0b0d; --panel:rgba(24,25,30,.62); --line:rgba(201,162,39,.20);
+    --gold:#c9a227; --gold-soft:#dcc46a; --red:#b23a48; --text:#eceae3; --muted:#86857f;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:
+     radial-gradient(1200px 700px at 70% -10%, rgba(201,162,39,.10), transparent 60%),
+     radial-gradient(900px 600px at 0% 110%, rgba(178,58,72,.10), transparent 55%),
+     var(--ink);
+    color:var(--text); font-family:'Inter',system-ui,sans-serif; -webkit-font-smoothing:antialiased;}
+  body{min-height:100vh; padding:28px 18px 60px;}
+  .wrap{max-width:1080px; margin:0 auto;}
+  header{display:flex; align-items:center; gap:14px; margin-bottom:22px;}
+  .mark{width:42px;height:42px;flex:0 0 auto;display:grid;place-items:center;
+    border:1px solid var(--line); border-radius:12px; background:linear-gradient(160deg,rgba(201,162,39,.16),rgba(0,0,0,.2));}
+  .mark svg{width:24px;height:24px;fill:var(--gold-soft)}
+  .brand h1{font-family:'Bebas Neue',sans-serif; font-size:30px; letter-spacing:3px; margin:0; line-height:1;}
+  .brand p{margin:3px 0 0; font-size:12.5px; color:var(--muted); letter-spacing:.3px;}
+  .brand b{color:var(--gold-soft); font-weight:600;}
+  .grid{display:grid; grid-template-columns:1fr; gap:18px;}
+  @media(min-width:900px){.grid{grid-template-columns:380px 1fr;}}
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:18px;
+    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    box-shadow:0 20px 50px -25px rgba(0,0,0,.8);}
+  .eyebrow{font-family:'Bebas Neue',sans-serif; letter-spacing:2.5px; font-size:13px; color:var(--gold);
+    display:flex; align-items:center; gap:8px; margin:0 0 14px;}
+  .eyebrow::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent);}
+  label{display:block; font-size:11px; text-transform:uppercase; letter-spacing:1.4px; color:var(--muted); margin:0 0 6px;}
+  textarea,select{width:100%; background:rgba(8,9,12,.7); color:var(--text); border:1px solid rgba(255,255,255,.08);
+    border-radius:12px; padding:11px 12px; font-family:inherit; font-size:14px; outline:none; transition:border-color .2s;}
+  textarea{resize:vertical; min-height:70px; line-height:1.45;}
+  textarea:focus,select:focus{border-color:rgba(201,162,39,.5);}
+  .row{display:flex; gap:10px; flex-wrap:wrap;}
+  .row>div{flex:1; min-width:90px;}
+  .field{margin-bottom:14px;}
+  .modes{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:16px;}
+  .mode{cursor:pointer; text-align:center; padding:12px 6px; border-radius:12px; border:1px solid rgba(255,255,255,.08);
+    background:rgba(8,9,12,.5); transition:.18s; user-select:none;}
+  .mode .ic{font-size:19px;}
+  .mode .nm{font-size:11px; letter-spacing:.4px; margin-top:5px; color:var(--muted);}
+  .mode[aria-selected="true"]{border-color:var(--gold); background:linear-gradient(160deg,rgba(201,162,39,.14),rgba(8,9,12,.5));}
+  .mode[aria-selected="true"] .nm{color:var(--gold-soft);}
+  .btn{width:100%; cursor:pointer; border:none; border-radius:13px; padding:14px; font-family:'Bebas Neue',sans-serif;
+    letter-spacing:2px; font-size:18px; color:#16130a; background:linear-gradient(160deg,var(--gold-soft),var(--gold));
+    box-shadow:0 12px 30px -12px rgba(201,162,39,.6); transition:transform .12s, filter .2s;}
+  .btn:hover{filter:brightness(1.06);} .btn:active{transform:translateY(1px);}
+  .btn[disabled]{opacity:.5; cursor:wait; filter:grayscale(.3);}
+  .btn.ghost{background:transparent; color:var(--gold-soft); border:1px solid var(--line); box-shadow:none; font-size:14px; letter-spacing:1.4px; padding:11px;}
+  .stagewrap{display:flex; flex-direction:column; align-items:center;}
+  .phone{position:relative; width:100%; max-width:300px; aspect-ratio:9/16; border-radius:26px; overflow:hidden;
+    background:#000; border:1px solid rgba(255,255,255,.1); box-shadow:0 30px 70px -30px #000, inset 0 0 0 5px #0d0d0f;}
+  .phone img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity .3s;}
+  .phone img.show{opacity:1;}
+  .kb{animation:kb var(--dur,3s) linear forwards;}
+  @keyframes kb{from{transform:scale(1);}to{transform:scale(1.08);}}
+  .grain{position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(180deg, transparent 55%, rgba(0,0,0,.65));}
+  .sub{position:absolute; left:0; right:0; bottom:11%; padding:0 14px; text-align:center;
+    font-family:'Bebas Neue',sans-serif; font-size:20px; line-height:1.1; letter-spacing:.5px; color:#fff;
+    text-shadow:0 2px 0 #000,0 0 8px rgba(0,0,0,.95),2px 2px 0 #000,-2px 2px 0 #000;}
+  .sub .k{color:#ff6b78;}
+  .empty{position:absolute; inset:0; display:grid; place-items:center; text-align:center; padding:24px; color:var(--muted);}
+  .empty svg{width:46px;height:46px;fill:rgba(201,162,39,.4); margin-bottom:12px;}
+  .wm{position:absolute; top:12px; right:13px; font-family:'Bebas Neue',sans-serif; letter-spacing:2px; font-size:12px;
+    color:rgba(255,255,255,.7); text-shadow:0 1px 3px #000;}
+  .badge{position:absolute; top:11px; left:13px; font-size:10px; letter-spacing:1px; color:#fff; background:rgba(178,58,72,.85);
+    padding:3px 8px; border-radius:20px; display:none;}
+  .badge.on{display:block;}
+  .transport{display:flex; gap:10px; margin:16px 0 4px; width:100%; max-width:300px;}
+  .transport .btn{flex:1;}
+  .strip{display:grid; grid-template-columns:repeat(auto-fill,minmax(70px,1fr)); gap:6px; padding:10px 2px 4px; width:100%;}
+  .thumb{height:124px; border-radius:10px; overflow:hidden; position:relative; border:1px solid rgba(255,255,255,.08); background:#111; cursor:pointer;}
+  .thumb img{width:100%;height:100%;object-fit:cover;}
+  .thumb span{position:absolute; top:3px; left:4px; font-family:'Bebas Neue'; font-size:13px; color:var(--gold-soft); text-shadow:0 1px 3px #000; z-index:2;}
+  .thumb .edit{position:absolute; top:2px; right:2px; z-index:3; width:20px; height:20px; padding:0; border:none; border-radius:5px; background:rgba(0,0,0,.6); color:var(--gold-soft); cursor:pointer; font-size:12px; line-height:20px; text-align:center;}
+  .thumb .edit:hover{background:var(--gold); color:#000;}
+  .thumb.fail{outline:2px solid var(--red);}
+  .thumb.fail::before{content:"↻";position:absolute;inset:0;display:grid;place-items:center;font-size:26px;color:var(--red);background:rgba(0,0,0,.5);z-index:4;pointer-events:none;}
+  .thumb.active{outline:2px solid var(--gold);}
+  .thumb.loading::after{content:"";position:absolute;inset:0;background:
+     linear-gradient(100deg,transparent,rgba(201,162,39,.18),transparent); background-size:200% 100%; animation:sh 1.3s infinite;}
+  @keyframes sh{to{background-position:-200% 0;}}
+  .export{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:14px; width:100%;}
+  .status{font-size:12.5px; color:var(--muted); margin:12px 2px 0; min-height:18px; line-height:1.4;}
+  .status b{color:var(--gold-soft);}
+  .pbar{width:100%; height:6px; border-radius:6px; background:rgba(255,255,255,.07); overflow:hidden; margin:10px 0 0; display:none;}
+  .pbar.on{display:block;}
+  .pbar i{display:block; height:100%; width:0; border-radius:6px; background:linear-gradient(90deg,var(--gold-soft),var(--gold)); transition:width .35s ease;}
+  .err{color:#ff8a96;}
+  .caption-box{margin-top:12px; background:rgba(8,9,12,.8); border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:12px; color:var(--muted); display:none; word-break:break-word;}
+  .caption-box b{color:var(--gold-soft); display:block; margin-bottom:4px; font-size:11px; letter-spacing:1px; text-transform:uppercase;}
+  .caption-box .cp{cursor:pointer; color:var(--gold); font-size:11px; margin-left:8px;}
+  .caption-box .cp:hover{text-decoration:underline;}
+  .hint{font-size:11.5px; color:var(--muted); margin-top:10px; line-height:1.5; border-top:1px solid rgba(255,255,255,.06); padding-top:10px;}
+  canvas.rec{display:none;}
+  a.dl{display:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="mark"><svg viewBox="0 0 24 24"><path d="M3 7c2-3 6-3 8-1 1-2 4-2 6-1l4 1-3 2c1 2 0 5-2 6l1 4-4-2c-2 2-6 2-8-1-2 0-4-1-4-3 2 1 3 0 3-1-2 0-3-1-3-3 1 1 2 1 3 0-1-1-1-3-1-4z"/></svg></div>
+    <div class="brand"><h1>CORVUS STUDIO</h1><p>Générateur de vidéos TikTok — <b>style Lunivo</b></p></div>
+  </header>
+  <div class="grid">
+    <section class="panel">
+      <p class="eyebrow">Brief</p>
+      <div class="field">
+        <label for="topic">Sujet / idée de vidéo</label>
+        <textarea id="topic" placeholder="Ex : pourquoi les gens qui lisent s'enrichissent · le silence comme stratégie · ce que les sages font le matin…"></textarea>
+      </div>
+      <label>Style visuel</label>
+      <div class="modes" id="modes" style="grid-template-columns:repeat(4,1fr)">
+        <div class="mode" data-mode="slideshow" role="button" tabindex="0" aria-selected="false"><div class="ic">🎞️</div><div class="nm">Cinéma</div></div>
+        <div class="mode" data-mode="comic" role="button" tabindex="0" aria-selected="false"><div class="ic">💥</div><div class="nm">Comic</div></div>
+        <div class="mode" data-mode="manga" role="button" tabindex="0" aria-selected="false"><div class="ic">🖋️</div><div class="nm">Manga</div></div>
+        <div class="mode" data-mode="corvus" role="button" tabindex="0" aria-selected="true"><div class="ic">🪶</div><div class="nm">Corvus</div></div>
+      </div>
+      <div class="row field">
+        <div>
+          <label for="lang">Langue</label>
+          <select id="lang"><option value="fr" selected>Français</option><option value="pt">Português</option><option value="en">English</option><option value="es">Español</option></select>
+        </div>
+        <div>
+          <label for="count">Scènes</label>
+          <select id="count"><option>10</option><option>15</option><option selected>20</option><option>25</option><option>30</option></select>
+        </div>
+        <div>
+          <label for="shots">Plans/scène</label>
+          <select id="shots"><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option></select>
+        </div>
+        <div>
+          <label for="captions">Légendes</label>
+          <select id="captions"><option value="on" selected>Oui</option><option value="off">Non</option></select>
+        </div>
+        <div>
+          <label for="engine">Moteur</label>
+          <select id="engine"><option value="fast" selected>⚡ Rapide</option><option value="quality">💎 Qualité</option></select>
+        </div>
+        <div>
+          <label for="voice">Voix</label>
+          <select id="voice"><option value="onyx" selected>Onyx (grave)</option><option value="nova">Nova (femme)</option><option value="echo">Echo</option><option value="fable">Fable</option><option value="alloy">Alloy</option><option value="shimmer">Shimmer</option></select>
+        </div>
+      </div>
+      <button class="btn" id="gen">⚡ Générer la vidéo</button>
+      <p class="status" id="status">Écris un sujet, choisis un style, puis génère.</p>
+      <div class="pbar" id="pbar"><i></i></div>
+      <div class="caption-box" id="captionBox">
+        <b>Caption TikTok <span class="cp" id="cpBtn">Copier</span></b>
+        <span id="captionText"></span>
+      </div>
+      <p class="hint">⚡ Rapide = Full HD (1080×1920) · 💎 Qualité = 2K (1440×2560). Plans/scène = images par narration (comme Lunivo : 2-3 plans par phrase). Min. 20 scènes recommandé.</p>
+      <div style="margin-top:14px; border-top:1px solid rgba(255,255,255,.06); padding-top:14px;">
+        <label for="pasteBox">Coller un script JSON (secours)</label>
+        <textarea id="pasteBox" placeholder='{"title":"...","caption":"...","scenes":[{"narration":"...","subtitle":"...","shots":["prompt1","prompt2"]}]}'></textarea>
+        <button class="btn ghost" id="loadScript" style="margin-top:10px; width:100%">Charger le script collé</button>
+      </div>
+    </section>
+    <section class="panel stagewrap">
+      <p class="eyebrow" style="width:100%">Aperçu 9:16</p>
+      <div class="phone" id="phone">
+        <span class="badge" id="recBadge">● REC</span>
+        <span class="wm">CORVUS</span>
+        <div class="empty" id="empty"><div><svg viewBox="0 0 24 24"><path d="M3 7c2-3 6-3 8-1 1-2 4-2 6-1l4 1-3 2c1 2 0 5-2 6l1 4-4-2c-2 2-6 2-8-1-2 0-4-1-4-3 2 1 3 0 3-1-2 0-3-1-3-3 1 1 2 1 3 0-1-1-1-3-1-4z"/></svg><div>Ta vidéo apparaîtra ici.</div></div></div>
+        <img id="slide" alt="">
+        <div class="grain"></div>
+        <div class="sub" id="sub"></div>
+      </div>
+      <div class="transport">
+        <button class="btn" id="play" disabled>▶ Lire</button>
+        <button class="btn ghost" id="stop" disabled>Stop</button>
+      </div>
+      <div class="strip" id="strip"></div>
+      <!-- retryAll removido: retry automático activado -->
+      <div class="export">
+        <button class="btn ghost" id="dlImgs" disabled>⬇ Images</button>
+        <button class="btn ghost" id="dlScript" disabled>⬇ Script</button>
+        <button class="btn ghost" id="rec" disabled>🎬 Vidéo</button>
+      </div>
+      <p class="hint" style="width:100%">🎬 génère la voix de chaque scène et exporte une vidéo 9:16 <b>avec voix embebida</b>, sans partage d'écran. Laisse l'onglet ouvert.</p>
+    </section>
+  </div>
+</div>
+<canvas class="rec" id="canvas" width="720" height="1280"></canvas>
+<a class="dl" id="dlink"></a>
+<script>
+const $ = s => document.querySelector(s);
+// state: scenes now have .shots[] array (multiple images per narration, like Lunivo)
+const state = { mode:'corvus', scenes:[], playing:false, seed:Math.floor(Math.random()*1e6), caption:'' };
+
+const STYLES = {
+  slideshow:{ suffix:"dramatic cinematic film still, professional photography, moody lighting, ultra detailed", anchor:"" },
+  comic:{ suffix:"bold western comic book panel, thick ink lines, halftone dots, high contrast, dynamic pose", anchor:"" },
+  manga:{ suffix:"black and white manga panel, screentones, dynamic speed lines, expressive faces, detailed background", anchor:"" },
+  corvus:{ suffix:"dark cinematic chiaroscuro, golden luxury atmosphere, mysterious noir mood, ultra detailed illustration, flat color cartoon style, clean bold outlines",
+           anchor:"recurring character: an elegant anthropomorphic black raven wearing a tailored dark suit, sharp eyes, standing upright like a wise professor," }
+};
+
+// Lunivo-style: each shot must show an ACTION + CONSEQUENCE, not a portrait
+const SHOT_RULES = " — show an action and its consequence, strong visual metaphor, character interacting in a full detailed environment, dynamic composition, extreme close-up OR wide establishing shot OR medium action shot alternating for rhythm, NO lone face portrait, NO empty landscape, vertical 9:16 composition, no text overlay, ultra detailed, sharp focus";
+
+const QUALITY = " ultra detailed, 4k, sharp focus, high resolution, intricate detail, crisp, professional illustration";
+
+document.querySelectorAll('.mode').forEach(m=>{
+  const pick=()=>{ document.querySelectorAll('.mode').forEach(x=>x.setAttribute('aria-selected','false'));
+    m.setAttribute('aria-selected','true'); state.mode=m.dataset.mode; };
+  m.addEventListener('click',pick);
+  m.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault();pick();} });
+});
+
+function setStatus(t,err){ const s=$('#status'); s.innerHTML=t; s.classList.toggle('err',!!err); }
+
+function imgURL(prompt, sceneIdx, shotIdx){
+  const s=STYLES[state.mode];
+  const sc=state.scenes[sceneIdx]||{};
+  let full;
+  if(sc.userPrompt){
+    full=(prompt+', '+s.suffix+QUALITY+', vertical 9:16, no text').trim();
+  } else {
+    full=(s.anchor+' '+prompt+SHOT_RULES+', '+s.suffix+QUALITY).trim();
+  }
+  const fast=$('#engine').value==='fast';
+  const model=fast?'turbo':'flux';
+  const W=fast?1080:1440, H=fast?1920:2560;
+  const salt=sc._salt||0;
+  // Each shot gets a different seed offset for visual variety
+  const seed=state.seed + sceneIdx*37 + shotIdx*7 + salt;
+  return 'https://image.pollinations.ai/prompt/'+encodeURIComponent(full)+'?width='+W+'&height='+H+'&nologo=true&enhance=true&model='+model+'&seed='+seed;
+}
+
+function sceneDur(sc){ const w=(sc.narration||'').split(/\s+/).length; return Math.max(2.0, w*0.38); }
+function shotDur(sc){ return sceneDur(sc) / (sc.shots||[sc.imagePrompt]).length; }
+function subHTML(s){ return (s||'').replace(/\*(.+?)\*/g,'<span class="k">$1</span>'); }
+
+// Flat list of all shots for playback (scene + shot index)
+function allShots(){
+  const list=[];
+  state.scenes.forEach((sc,si)=>{
+    (sc.images||[]).forEach((img,shi)=>{ list.push({sc,si,shi,img}); });
+  });
+  return list.filter(x=>x.img&&x.sc.ready);
+}
+
+function regen(si, shi){
+  const sc=state.scenes[si]; if(!sc) return;
+  const current=(sc.shots&&sc.shots[shi])||sc.imagePrompt||'';
+  const txt=prompt('Décris l\'image voulue (scène '+(si+1)+', plan '+(shi+1)+') :', current);
+  if(txt===null) return;
+  if(txt.trim()){ if(!sc.shots) sc.shots=[sc.imagePrompt]; sc.shots[shi]=txt.trim(); sc.userPrompt=true; }
+  sc._salt=Math.floor(Math.random()*1e6);
+  if(!sc.images) sc.images=[];
+  sc.images[shi]=imgURL(sc.shots[shi]||sc.imagePrompt, si, shi);
+  loadShot(si,shi,0,()=>{ imgStatus(); });
+  setStatus('Régénération scène '+(si+1)+' plan '+(shi+1)+'…');
+}
+
+// ---------- robust JSON ----------
+function tolerantParse(s){
+  try{ return JSON.parse(s); }catch(e){}
+  try{
+    // Try to extract scenes with shots array or imagePrompt
+    const re=/"narration"\s*:\s*"((?:[^"\\]|\\.)*)"\s*,\s*"subtitle"\s*:\s*"((?:[^"\\]|\\.)*)"\s*,\s*"(?:imagePrompt|shots)"\s*:\s*((?:"[^"]*"|\[[^\]]*\]))/g;
+    const scenes=[]; let m;
+    while((m=re.exec(s))){
+      const nar=JSON.parse('"'+m[1]+'"'), sub=JSON.parse('"'+m[2]+'"');
+      let shots; try{ shots=JSON.parse(m[3]); }catch(e){ shots=[JSON.parse(m[3])]; }
+      if(!Array.isArray(shots)) shots=[shots];
+      scenes.push({narration:nar,subtitle:sub,shots,imagePrompt:shots[0]});
+    }
+    if(scenes.length) return {scenes};
+  }catch(e){}
+  return null;
+}
+
+// ---------- generate (Lunivo formula) ----------
+$('#gen').addEventListener('click', generate);
+$('#loadScript').addEventListener('click', ()=>{
+  let raw=$('#pasteBox').value.trim();
+  if(!raw){ setStatus('Colle d\'abord un script JSON.',true); return; }
+  raw=raw.replace(/```json/gi,'').replace(/```/g,'').trim();
+  const a=raw.indexOf('{'); if(a>=0) raw=raw.slice(a);
+  const p=tolerantParse(raw);
+  if(!p||!p.scenes||!p.scenes.length){ setStatus('Script illisible. Vérifie le JSON.',true); return; }
+  state.seed=Math.floor(Math.random()*1e6); state.title=p.title||'video'; state.caption=p.caption||'';
+  const nShots=+($('#shots').value)||2;
+  state.scenes=p.scenes.map(s=>({
+    ...s,
+    shots:s.shots||(Array.isArray(s.shots)?s.shots:[s.imagePrompt,s.imagePrompt+'  — different angle, closer shot']).slice(0,nShots),
+    imagePrompt:s.imagePrompt||(s.shots&&s.shots[0])||'',
+    images:[], ready:false, userPrompt:true
+  }));
+  updateCaptionBox();
+  renderScenes();
+});
+
+async function generate(){
+  const topic=$('#topic').value.trim();
+  if(!topic){ setStatus('Écris d\'abord un sujet.',true); return; }
+  const lang=$('#lang').value, count=+$('#count').value, nShots=+($('#shots').value)||2;
+  const langName={fr:'French',pt:'Portuguese',en:'English',es:'Spanish'}[lang];
+  state.seed=Math.floor(Math.random()*1e6);
+  $('#gen').disabled=true; $('#gen').textContent='…';
+
+  // Lunivo formula: incomplete hook + binary contrast + counter-intuitive twist
+  const prompt=`You are an expert viral TikTok faceless video creator. Output ONLY one raw JSON object, no markdown, no extra text.
+Topic: "${topic}".
+Create a ${count}-scene TikTok video script in this exact JSON format:
+{"title":"...","caption":"...","scenes":[{"narration":"...","subtitle":"...","shots":["imagePrompt1","imagePrompt2"]}]}
+
+LUNIVO FORMULA — follow this exact narrative structure:
+1. HOOK (scenes 1-2): Start with an INCOMPLETE phrase that creates a question (e.g. "CE QUE LES RICHES FONT..." stop mid-phrase). Must create immediate curiosity. NEVER start with a complete statement.
+2. CONTRAST (scenes 3-6): Binary opposition "la personne ordinaire fait X... mais le Corbeau fait Y". Show the wrong way vs the right way.
+3. RISING STAKES (scenes 7-12): Escalate the problem. Each scene reveals a deeper layer of the issue. Add statistics or surprising facts.
+4. REVELATION (scenes 13-17): The counter-intuitive twist that contradicts common sense. Make it debatable (provokes comments).
+5. STRONG ENDING (last 3 scenes): Simple rule of action. Last line must create desire to save the video.
+
+STRICT RULES:
+- "narration" and "subtitle" in ${langName}. All "shots" imagePrompts in ENGLISH only.
+- narration: ONE punchy sentence, max 15 words. Wrap the ONE most important word in *asterisks*. Assertive tone, no hedging.
+- subtitle: exactly 3 words, wrap one *word* in asterisks.
+- shots: array of EXACTLY ${nShots} different imagePrompt strings. Each shot shows a DIFFERENT ANGLE of the same scene — alternate between: extreme close-up detail / wide establishing shot / medium action shot. Every shot must show ACTION + CONSEQUENCE (never a static portrait). The same recurring character (the Raven in dark suit) must appear in every shot. Each shot prompt must be different and complement the others.
+- caption: one TikTok caption in ${langName}: "Le saviez-vous ? [1 intriguing hook sentence] #philosophie #animation #france"
+- Scene 1 MUST have an incomplete/cut phrase as hook.
+- Every narration must be debatable or counter-intuitive to provoke comments.
+Return ONLY the JSON, starting with {.`;
+
+  let lastErr='';
+  for(let attempt=1; attempt<=2; attempt++){
+    setStatus(attempt===1?'Écriture du script Lunivo…':'Nouvel essai…');
+    try{
+      const url='https://text.pollinations.ai/'+encodeURIComponent(prompt)+'?model=openai';
+      const r=await fetch(url);
+      if(!r.ok) throw new Error('API '+r.status);
+      let txt=(await r.text()).trim().replace(/```json/gi,'').replace(/```/g,'').trim();
+      const a=txt.indexOf('{'); if(a>=0) txt=txt.slice(a);
+      const p=tolerantParse(txt);
+      if(!p||!Array.isArray(p.scenes)||!p.scenes.length) throw new Error('format JSON invalide');
+      state.title=p.title||topic; state.caption=p.caption||'';
+      state.scenes=p.scenes.map((s,i)=>{
+        // Normalize: ensure shots array
+        let shots=s.shots;
+        if(!Array.isArray(shots)||!shots.length){
+          const base=s.imagePrompt||'scene '+i;
+          shots=[base];
+          if(nShots>=2) shots.push(base+' — different camera angle, closer framing, extreme detail shot');
+          if(nShots>=3) shots.push(base+' — wide establishing shot showing full environment and atmosphere');
+        }
+        shots=shots.slice(0,nShots);
+        return {...s, shots, imagePrompt:shots[0], images:[], ready:false};
+      });
+      updateCaptionBox();
+      $('#gen').disabled=false; $('#gen').textContent='⚡ Générer la vidéo';
+      renderScenes(); return;
+    }catch(e){ lastErr=e.message; }
+  }
+  setStatus('Indisponible ('+lastErr+'). Utilise « coller un script » ci-dessous.',true);
+  $('#gen').disabled=false; $('#gen').textContent='⚡ Générer la vidéo';
+}
+
+function updateCaptionBox(){
+  const box=$('#captionBox'), txt=$('#captionText');
+  if(state.caption){ box.style.display='block'; txt.textContent=state.caption; }
+  else { box.style.display='none'; }
+}
+$('#cpBtn').addEventListener('click',()=>{
+  navigator.clipboard.writeText(state.caption||'').then(()=>{ $('#cpBtn').textContent='Copié ✓'; setTimeout(()=>$('#cpBtn').textContent='Copier',2000); });
+});
+
+// ---------- render ----------
+function enableButtons(on){ ['play','stop','dlImgs','dlScript','rec'].forEach(id=>$('#'+id).disabled=!on); }
+let _thumbs=[], _firstShown=false;
+
+function imgStatus(){
+  const total=state.scenes.length;
+  const ready=state.scenes.filter(x=>x.ready).length;
+  const failed=state.scenes.filter(x=>x.failed).length;
+  const pend=total-ready-failed;
+  const pbar=$('#pbar'), fill=pbar&&pbar.querySelector('i');
+  if(pbar){ if(total){ pbar.classList.add('on'); fill.style.width=Math.round((ready+failed)/total*100)+'%'; }
+    if(pend===0) setTimeout(()=>pbar.classList.remove('on'),900); }
+  const totalShots=state.scenes.reduce((a,s)=>a+(s.shots||[s.imagePrompt]).length,0);
+  const readyShots=state.scenes.reduce((a,s)=>a+(s.images||[]).filter(Boolean).length,0);
+  let msg='<b>'+ready+'/'+total+'</b> scènes · <b>'+readyShots+'/'+totalShots+'</b> images';
+  if(pend>0) msg+=' (chargement…)';
+  else if(failed) msg+=' · '+failed+' ↻ auto…';
+  else msg+=' ✓ — ▶ Lire ou 🎬 Vidéo';
+  setStatus(msg);
+  if(ready>0) enableButtons(true);
+  if(pend===0 && ready>0){ try{ prefetchVoices(); }catch(e){} }
+  // retry automático — sem botão manual necessário
+}
+
+// Load one shot — timeout LONGO (deixa o servidor terminar), poucos pedidos simultâneos
+function loadShot(si, shi, attempt, onEnd){
+  attempt=attempt||0; onEnd=onEnd||function(){};
+  const sc=state.scenes[si];
+  if(!sc){ onEnd(); return; }
+  sc._salt=(attempt>0)?Math.floor(Math.random()*1e6):(sc._salt||0);
+  const url=imgURL(sc.shots&&sc.shots[shi]?sc.shots[shi]:sc.imagePrompt, si, shi);
+  sc.images[shi]=url;
+  const im=new Image(); let done=false;
+  // timeout LONGO: dá tempo ao servidor lento terminar em vez de reiniciar o pedido
+  const tOut=60000;
+  const to=setTimeout(()=>finish(false), tOut);
+  function finish(ok){
+    if(done) return; done=true; clearTimeout(to);
+    if(ok){
+      sc._loadedShots=(sc._loadedShots||0)+1;
+      if(!sc.ready){ sc.ready=true; sc.failed=false;
+        if(!_firstShown){ _firstShown=true; showShot(si,0,false); }
+        const t=_thumbs[si]; if(t){ t.classList.remove('loading'); t.classList.remove('fail');
+          const v=new Image(); v.src=url; t.querySelectorAll('img').forEach(e=>e.remove()); t.prepend(v); }
+        imgStatus();
+      }
+      onEnd();
+    } else {
+      const t=_thumbs[si];
+      if(t && !sc.ready){ t.classList.remove('fail'); t.classList.add('loading'); }
+      // só re-tenta depois de 60s reais sem resposta — sem martelar o servidor
+      setTimeout(()=>loadShot(si,shi,attempt+1,onEnd), 5000);
+    }
+  }
+  im.onload=()=>finish(true);
+  im.onerror=()=>finish(false);
+  im.src=url;
+}
+
+function renderScenes(){
+  $('#empty').style.display='none';
+  const strip=$('#strip'); strip.innerHTML=''; _thumbs=[]; _firstShown=false;
+  enableButtons(false);
+  const nShots=+($('#shots').value)||2;
+
+  state.scenes.forEach((sc,si)=>{
+    // Build shots array + images array
+    if(!Array.isArray(sc.shots)||!sc.shots.length){
+      sc.shots=Array.from({length:nShots},(_,k)=>k===0?sc.imagePrompt:(sc.imagePrompt+' — angle '+(k+1)));
+    }
+    sc.images=sc.shots.map((pr,shi)=>imgURL(pr,si,shi));
+    sc.ready=false; sc.failed=false; sc._loadedShots=0;
+
+    const t=document.createElement('div'); t.className='thumb loading';
+    t.innerHTML='<span>'+(si+1)+'</span><button class="edit" title="Éditer">✎</button>';
+    t.querySelector('.edit').addEventListener('click',(e)=>{ e.stopPropagation(); regen(si,0); });
+    t.addEventListener('click',()=>{
+      if(sc.failed){
+        sc._salt=Math.floor(Math.random()*1e6);
+        sc.images=sc.shots.map((pr,shi2)=>imgURL(pr,si,shi2));
+        sc.failed=false; sc.ready=false; sc._loadedShots=0;
+        t.classList.remove('fail'); t.classList.add('loading');
+        let shi2=0;
+        function ns(){ if(shi2>=sc.shots.length){ imgStatus(); return; } loadShot(si,shi2,0,()=>{ shi2++; ns(); }); }
+        ns();
+      } else if(sc.ready){ showShot(si,0,false); }
+    });
+    strip.appendChild(t); _thumbs[si]=t;
+  });
+
+  imgStatus();
+
+  // Load all shots: 2 concurrent — timeout longo evita reiniciar pedidos em curso
+  let next=0, active=0; const CONC=2;
+  function pump(){
+    while(active<CONC && next<state.scenes.length){
+      const si=next++; active++;
+      const sc=state.scenes[si];
+      // Load shots sequentially within each scene, with small delay between scenes
+      setTimeout(()=>{
+        let shi=0;
+        function nextShot(){
+          if(shi>=sc.shots.length){ active--; pump(); return; }
+          loadShot(si,shi,0,()=>{ shi++; nextShot(); });
+        }
+        nextShot();
+      }, 0);
+    }
+  }
+  pump();
+}
+
+function showShot(si, shi, animate){
+  const sc=state.scenes[si]; if(!sc) return;
+  const url=sc.images&&sc.images[shi]?sc.images[shi]:(sc.image||null);
+  if(!url) return;
+  const img=$('#slide'); img.classList.remove('kb'); void img.offsetWidth;
+  img.src=url; img.classList.add('show');
+  if(animate) img.classList.add('kb');
+  $('#sub').innerHTML=(($('#captions')&&$('#captions').value==='off')?'':subHTML(sc.narration||sc.subtitle));
+  // Highlight thumb
+  _thumbs.forEach((t,i)=>t.classList.toggle('active',i===si));
+}
+
+// ---------- retry all failed ----------
+// (listener attached after DOM ready, inline)
+
+// ---------- VOICE + PLAYBACK SYSTEM ----------
+// Architecture: ALL voices are pre-fetched via AudioContext BEFORE playback starts.
+// The ▶ button triggers pre-fetch first, then plays. Zero streaming during playback.
+
+let lastVoiceErr='', _actx=null;
+function getCtx(){
+  if(!_actx){ try{ _actx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return null; } }
+  if(_actx.state==='suspended'){ _actx.resume().catch(()=>{}); }
+  return _actx;
+}
+
+function ttsURL(text){
+  const v=$('#voice').value||'onyx';
+  return 'https://text.pollinations.ai/'+encodeURIComponent((text||'').slice(0,480))+'?model=openai-audio&voice='+v;
+}
+
+async function fetchVoice(text, tries){
+  if(!text) return null; tries=tries||0;
+  const actx=getCtx(); if(!actx) return null;
+  const u=ttsURL(text)+(tries?('&r='+Date.now()):'');
+  const ctrl=new AbortController();
+  const killer=setTimeout(()=>ctrl.abort(), 24000);
+  try{
+    const r=await fetch(u,{signal:ctrl.signal}); clearTimeout(killer);
+    if(!r.ok){ lastVoiceErr='HTTP '+r.status; throw new Error(lastVoiceErr); }
+    const ab=await r.arrayBuffer();
+    if(ab.byteLength<1500){ lastVoiceErr='empty response'; throw new Error(lastVoiceErr); }
+    const buf=await Promise.race([
+      actx.decodeAudioData(ab.slice(0)),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('decode-timeout')),9000))
+    ]);
+    if(buf && buf.duration>0.1) return buf;
+    throw new Error('decode failed');
+  }catch(e){
+    clearTimeout(killer);
+    lastVoiceErr=(e&&e.name==='AbortError')?'timeout':((e&&e.message)||'network');
+    if(tries<3){ await new Promise(r=>setTimeout(r,800*(tries+1))); return fetchVoice(text,tries+1); }
+    return null;
+  }
+}
+
+async function getVoice(sc){
+  if(!sc||!sc.narration) return null;
+  if(sc.voiceBuf) return sc.voiceBuf;
+  const buf=await fetchVoice(sc.narration);
+  if(buf) sc.voiceBuf=buf;
+  return buf;
+}
+
+// Invalidate cache on voice/lang change
+['voice','lang'].forEach(id=>{ const el=$('#'+id); if(el) el.addEventListener('change',()=>{ state.scenes.forEach(s=>{ s.voiceBuf=null; }); }); });
+
+// Background prefetch after images load
+let _prefetching=false;
+async function prefetchVoices(){
+  if(_prefetching) return; _prefetching=true;
+  const list=state.scenes.filter(s=>s.ready && s.narration && !s.voiceBuf);
+  let ni=0;
+  async function w(){ while(ni<list.length){ const sc=list[ni++]; try{ await getVoice(sc); }catch(e){} } }
+  try{ await Promise.all([w(),w(),w()]); }catch(e){}
+  _prefetching=false;
+}
+
+// ---------- PLAY: pre-fetch ALL voices, then start ----------
+let _stopFlag=false, _activeSrc=null;
+
+$('#play').addEventListener('click', async ()=>{
+  const ready=state.scenes.filter(s=>s.ready); if(!ready.length) return;
+  if(state.playing){ stopPlay(); return; }
+
+  // Resume AudioContext on user gesture
+  const actx=getCtx();
+  if(actx && actx.state==='suspended') await actx.resume().catch(()=>{});
+
+  // Pre-fetch ALL voices first (show progress in button)
+  const btn=$('#play'); btn.disabled=true; btn.textContent='⏳ Voix…';
+  const missing=ready.filter(s=>!s.voiceBuf);
+  if(missing.length>0){
+    setStatus('Préchargement de la voix… ('+missing.length+' scènes)');
+    let done=0, ni=0;
+    async function worker(){
+      while(ni<missing.length){
+        const sc=missing[ni++];
+        await getVoice(sc);
+        done++;
+        btn.textContent='⏳ '+done+'/'+missing.length;
+        setStatus('Voix <b>'+done+'/'+missing.length+'</b> prête…');
+      }
+    }
+    await Promise.all([worker(),worker(),worker()]);
+  }
+
+  btn.disabled=false; btn.textContent='▶ Lire';
+  setStatus('Lecture…');
+  playSequence(ready);
+});
+
+$('#stop').addEventListener('click', stopPlay);
+
+function stopPlay(){
+  _stopFlag=true; state.playing=false;
+  if(_activeSrc){ try{_activeSrc.stop();}catch(e){} _activeSrc=null; }
+  try{speechSynthesis.cancel();}catch(e){}
+  $('#slide').classList.remove('kb');
+  _thumbs.forEach(t=>t.classList.remove('active'));
+  setStatus('Arrêté.');
+}
+
+function playSequence(scenes){
+  _stopFlag=false; state.playing=true;
+  let i=0;
+  function runScene(){
+    if(_stopFlag || i>=scenes.length){ state.playing=false; setStatus('✓ Lecture terminée.'); return; }
+    const sc=scenes[i], si=state.scenes.indexOf(sc);
+    const imgs=sc.images||[sc.image];
+    const nImgs=imgs.filter(Boolean).length||1;
+    const buf=sc.voiceBuf;
+    const actx=getCtx();
+
+    // Duration: use audio buffer duration if available, else estimate
+    const dur=buf?buf.duration:(sceneDur(sc));
+    const perShot=dur/nImgs;
+
+    // Show first shot immediately
+    showShot(si,0,true);
+    setStatus('Scène '+(i+1)+'/'+scenes.length+' — '+(buf?'voix ✓':'voix indispo'));
+
+    // Schedule subsequent shots
+    const timers=[];
+    for(let k=1;k<nImgs;k++){
+      timers.push(setTimeout(()=>{ if(!_stopFlag) showShot(si,k,true); }, perShot*k*1000));
+    }
+
+    const cleanup=()=>{ timers.forEach(t=>clearTimeout(t)); };
+
+    if(buf && actx){
+      try{
+        const src=actx.createBufferSource();
+        src.buffer=buf;
+        src.connect(actx.destination);
+        _activeSrc=src;
+        src.onended=()=>{ cleanup(); _activeSrc=null; i++; runScene(); };
+        src.start();
+        // Safety timeout: if onended never fires
+        setTimeout(()=>{ if(_activeSrc===src){ try{src.stop();}catch(e){} } }, (dur+3)*1000);
+      }catch(e){
+        cleanup(); i++; runScene();
+      }
+    } else {
+      // Fallback: browser TTS or timer
+      if('speechSynthesis' in window && sc.narration){
+        const u=new SpeechSynthesisUtterance(sc.narration);
+        u.lang=$('#lang').value; u.rate=1.0;
+        u.onend=()=>{ cleanup(); i++; runScene(); };
+        u.onerror=()=>{ cleanup(); setTimeout(()=>{ i++; runScene(); }, dur*1000); };
+        speechSynthesis.speak(u);
+      } else {
+        setTimeout(()=>{ cleanup(); i++; runScene(); }, dur*1000);
+      }
+    }
+  }
+  runScene();
+}
+
+// ---------- downloads ----------
+function triggerDL(href,name){ const a=$('#dlink'); a.href=href; a.download=name; a.click(); }
+
+$('#dlImgs').addEventListener('click', async ()=>{
+  const shots=allShots();
+  setStatus('Téléchargement de '+shots.length+' images…');
+  for(let i=0;i<shots.length;i++){
+    const {si,shi,img}=shots[i];
+    try{ const b=await (await fetch(img)).blob(); triggerDL(URL.createObjectURL(b),'corvus_s'+(si+1)+'_p'+(shi+1)+'.jpg'); }
+    catch(e){ window.open(img,'_blank'); }
+    await new Promise(r=>setTimeout(r,280));
+  }
+  setStatus('<b>'+shots.length+' images téléchargées.</b>');
+});
+
+$('#dlScript').addEventListener('click', ()=>{
+  let t=(state.title||'video')+'\n';
+  if(state.caption) t+='Caption: '+state.caption+'\n';
+  t+='\n';
+  state.scenes.forEach((s,i)=>{
+    t+='SCENE '+(i+1)+'\nNarration: '+s.narration+'\nSous-titre: '+(s.subtitle||'').replace(/\*/g,'')+'\n';
+    (s.shots||[s.imagePrompt]).forEach((p,k)=>{ t+='Plan '+(k+1)+': '+p+'\n'; });
+    t+='\n';
+  });
+  triggerDL(URL.createObjectURL(new Blob([t],{type:'text/plain'})),'corvus_script.txt');
+  setStatus('<b>Script + caption téléchargés.</b>');
+});
+
+// ---------- record (voix embebida, sem partilha de ecrã) ----------
+$('#rec').addEventListener('click', recordVideo);
+async function recordVideo(){
+  const ready=state.scenes.filter(s=>s.ready);
+  if(!ready.length){ setStatus('Aucune image prête.',true); return; }
+  $('#rec').disabled=true;
+
+  const actx=getCtx();
+  if(!actx){ setStatus('Áudio indisponível.',true); $('#rec').disabled=false; return; }
+  const adest=actx.createMediaStreamDestination();
+
+  // 1) Fetch voices
+  setStatus('Génération des voix…'); $('#pbar').classList.add('on'); $('#pbar').querySelector('i').style.width='0%';
+  const voices=new Array(ready.length).fill(null);
+  let vdone=0, vnext=0;
+  async function voiceWorker(){
+    while(vnext<ready.length){ const k=vnext++;
+      voices[k]=await getVoice(ready[k]);
+      vdone++; $('#pbar').querySelector('i').style.width=Math.round(vdone/ready.length*100)+'%';
+      setStatus('<b>'+vdone+'/'+ready.length+'</b> voix…'+(voices[k]?'':' (1 échec)'));
+    }
+  }
+  await Promise.all([voiceWorker(),voiceWorker(),voiceWorker()]);
+  $('#pbar').classList.remove('on');
+  const haveVoice=voices.filter(Boolean).length;
+  if(haveVoice===0){
+    if(!confirm('Voix indisponible ('+lastVoiceErr+'). Générer sans voix ?')){
+      $('#rec').disabled=false; setStatus('Gravação cancelada.',true); return; }
+  }
+
+  // 2) Load images
+  setStatus('Chargement des images…');
+  const items=[];
+  for(let k=0;k<ready.length;k++){
+    const sc=ready[k];
+    const imgs=sc.images||[sc.image];
+    const loadedImgs=[];
+    for(let shi=0;shi<imgs.length;shi++){
+      try{ const im=new Image(); im.crossOrigin='anonymous';
+        await new Promise((res,rej)=>{ im.onload=res; im.onerror=rej; setTimeout(rej,25000); im.src=imgs[shi]; });
+        loadedImgs.push(im);
+      }catch(e){}
+    }
+    if(loadedImgs.length) items.push({sc, imgs:loadedImgs, buf:voices[k]});
+  }
+  if(!items.length){ setStatus('Images bloquées (CORS).',true); $('#rec').disabled=false; return; }
+  await (document.fonts?document.fonts.ready:Promise.resolve());
+
+  // 3) Record
+  const cv=$('#canvas'), ctx=cv.getContext('2d'), W=cv.width, H=cv.height;
+  const vs=cv.captureStream(30);
+  let mime='video/webm;codecs=vp9,opus'; if(!MediaRecorder.isTypeSupported(mime)) mime='video/webm';
+  const recr=new MediaRecorder(new MediaStream([...vs.getVideoTracks(), ...adest.stream.getAudioTracks()]),{mimeType:mime});
+  const chunks=[]; recr.ondataavailable=e=>{ if(e.data.size) chunks.push(e.data); };
+  recr.onstop=()=>{
+    triggerDL(URL.createObjectURL(new Blob(chunks,{type:'video/webm'})),'corvus_video.webm');
+    $('#recBadge').classList.remove('on'); $('#rec').disabled=false;
+    setStatus('<b>Vidéo exportée'+(haveVoice?' avec voix ✓':' (sans voix)')+'</b> — Convertis en .mp4 dans CapCut.');
+  };
+  $('#recBadge').classList.add('on'); recr.start();
+
+  for(const o of items){
+    await new Promise(doneScene=>{
+      const nImgs=o.imgs.length;
+      let ended=false;
+      let dur=o.buf?o.buf.duration*1000+200:sceneDur(o.sc)*1000+300;
+      const finish=()=>{ if(ended)return; ended=true; doneScene(); };
+
+      if(o.buf){
+        try{ const src=actx.createBufferSource(); src.buffer=o.buf;
+          src.connect(adest); src.connect(actx.destination);
+          src.onended=finish; src.start();
+        }catch(e){}
+      } else {
+        try{ const u=new SpeechSynthesisUtterance(o.sc.narration); u.lang=$('#lang').value; speechSynthesis.speak(u); }catch(e){}
+      }
+
+      const perShot=dur/nImgs;
+      let curShot=0;
+      // Schedule shot changes during recording
+      const shotTimers=[];
+      for(let k=1;k<nImgs;k++) shotTimers.push(setTimeout(()=>{ curShot=k; }, perShot*k));
+
+      const base0=Math.max(W/o.imgs[0].width,H/o.imgs[0].height);
+      const t0=performance.now();
+      (function f(){
+        const now=performance.now(), p=Math.min(1,(now-t0)/dur);
+        const im=o.imgs[Math.min(curShot,nImgs-1)];
+        const base=Math.max(W/im.width,H/im.height);
+        const z=base*(1+0.08*p), dw=im.width*z, dh=im.height*z;
+        ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H);
+        ctx.drawImage(im,(W-dw)/2,(H-dh)/2,dw,dh);
+        const g=ctx.createLinearGradient(0,H*0.55,0,H);
+        g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(1,'rgba(0,0,0,.65)');
+        ctx.fillStyle=g; ctx.fillRect(0,H*0.55,W,H*0.45);
+        if(!($('#captions')&&$('#captions').value==='off')) drawSub(ctx,o.sc.narration||o.sc.subtitle,W,H);
+        if(!ended && now-t0<dur) requestAnimationFrame(f); else finish();
+      })();
+      setTimeout(finish, 30000);
+    });
+  }
+  recr.stop();
+}
+
+function drawSub(ctx,raw,W,H){
+  if(!raw) return;
+  const tokens=[];
+  raw.split(/(\*[^*]+\*)/).forEach(seg=>{ if(!seg) return; const k=/^\*.*\*$/.test(seg);
+    (k?seg.slice(1,-1):seg).split(/\s+/).forEach(w=>{ if(w) tokens.push({w:w.toUpperCase(),k}); }); });
+  ctx.font='bold 48px "Bebas Neue", sans-serif'; ctx.textBaseline='middle';
+  const maxW=W-80, space=ctx.measureText(' ').width+2, lines=[[]]; let lw=0;
+  tokens.forEach(t=>{ const ww=ctx.measureText(t.w).width;
+    if(lw+ww>maxW && lines[lines.length-1].length){ lines.push([]); lw=0; }
+    lines[lines.length-1].push(t); lw+=ww+space; });
+  const lineH=54; let y=H*0.83-(lines.length-1)*lineH/2;
+  ctx.lineWidth=9; ctx.strokeStyle='rgba(0,0,0,0.95)'; ctx.lineJoin='round'; ctx.textAlign='left';
+  lines.forEach(line=>{ const tw=line.reduce((a,t)=>a+ctx.measureText(t.w).width+space,0)-space; let x=(W-tw)/2;
+    line.forEach(t=>{ ctx.strokeText(t.w,x,y); ctx.fillStyle=t.k?'#ff6b78':'#ffffff'; ctx.fillText(t.w,x,y); x+=ctx.measureText(t.w).width+space; }); y+=lineH; });
+}
+
+try{ speechSynthesis.getVoices(); }catch(e){}
+</script>
+</body>
+</html>
