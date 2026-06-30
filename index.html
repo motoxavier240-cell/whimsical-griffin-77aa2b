@@ -65,8 +65,8 @@
   @keyframes kb{from{transform:scale(1);}to{transform:scale(1.08);}}
   .grain{position:absolute; inset:0; pointer-events:none;
     background:linear-gradient(180deg, transparent 55%, rgba(0,0,0,.65));}
-  .sub{position:absolute; left:0; right:0; bottom:11%; padding:0 14px; text-align:center;
-    font-family:'Bebas Neue',sans-serif; font-size:20px; line-height:1.1; letter-spacing:.5px; color:#fff;
+  .sub{position:absolute; left:0; right:0; bottom:22%; padding:0 14px; text-align:center;
+    font-family:'Bebas Neue',sans-serif; font-size:24px; line-height:1.1; letter-spacing:.5px; color:#fff;
     text-shadow:0 2px 0 #000,0 0 8px rgba(0,0,0,.95),2px 2px 0 #000,-2px 2px 0 #000;}
   .sub .k{color:#ff6b78;}
   .empty{position:absolute; inset:0; display:grid; place-items:center; text-align:center; padding:24px; color:var(--muted);}
@@ -148,8 +148,18 @@
           <select id="engine"><option value="fast" selected>⚡ Rapide</option><option value="quality">💎 Qualité</option></select>
         </div>
         <div>
-          <label for="voice">Voix</label>
-          <select id="voice"><option value="onyx" selected>Onyx (grave)</option><option value="nova">Nova (femme)</option><option value="echo">Echo</option><option value="fable">Fable</option><option value="alloy">Alloy</option><option value="shimmer">Shimmer</option></select>
+          <label for="voice">Voix (ElevenLabs)</label>
+          <select id="voice"><option value="onyx" selected>Adam (dominant, ferme)</option><option value="nova">Sarah (femme, mature)</option><option value="echo">Brian (profond, rassurant)</option><option value="fable">George (chaleureux, conteur)</option><option value="alloy">Daniel (narrateur stable)</option><option value="shimmer">Jessica (femme, vive)</option></select>
+        </div>
+      </div>
+      <div class="row field">
+        <div>
+          <label for="stability">Stabilité <span id="stabVal">50%</span></label>
+          <input type="range" id="stability" min="0" max="100" value="50" style="width:100%;accent-color:#c9a227;">
+        </div>
+        <div>
+          <label for="similarity">Similarité <span id="simVal">75%</span></label>
+          <input type="range" id="similarity" min="0" max="100" value="75" style="width:100%;accent-color:#c9a227;">
         </div>
       </div>
       <button class="btn" id="gen">⚡ Générer la vidéo</button>
@@ -516,22 +526,24 @@ function getCtx(){
 
 // Mapa de vozes ElevenLabs (multilingual v2)
 const ELEVEN_VOICES = {
-  'onyx':    'pNInz6obpgDQGcFmaJgB', // Adam — grave masculin
-  'nova':    'EXAVITQu4vr4xnSDxMaL', // Bella — femme naturelle
-  'echo':    'VR6AewLTigWG4xSOukaG', // Arnold
-  'fable':   'flq6f7ib4F1Cvxo8bZ4F', // Michael
-  'alloy':   'ErXwobaYiN019PkySvjV', // Antoni
-  'shimmer': 'MF3mGyEYCl7XYWbV9V6O'  // Elli — femme douce
+  'onyx':    'pNInz6obpgDQGcFmaJgB', // Adam — dominant, firm (Corvus)
+  'nova':    'EXAVITQu4vr4xnSDxMaL', // Sarah — mature, reassuring
+  'echo':    'nPczCjzI2devNBz1zQrb', // Brian — profond, rassurant
+  'fable':   'JBFqnCBsd6RMkjVDRZzb', // George — chaleureux, conteur
+  'alloy':   'onwK4e9ZLuTAKqWW03F9', // Daniel — narrateur stable
+  'shimmer': 'cgSgspJ2msm6clMCkdW9'  // Jessica — chaleureuse, vive
 };
 function ttsURL(text){ return null; } // não usado com ElevenLabs
 async function fetchElevenLabs(text){
   if(!text) return null;
   const voiceId = ELEVEN_VOICES[$('#voice').value||'onyx'] || ELEVEN_VOICES['onyx'];
+  const stability = (+($('#stability')&&$('#stability').value||50))/100;
+  const similarity = (+($('#similarity')&&$('#similarity').value||75))/100;
   try{
     const r = await fetch('/api/tts', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({text: text.replace(/\*/g,''), voiceId})
+      body: JSON.stringify({text: text.replace(/\*/g,''), voiceId, stability, similarity})
     });
     if(!r.ok) return null;
     const ab = await r.arrayBuffer();
@@ -541,6 +553,14 @@ async function fetchElevenLabs(text){
     return buf;
   }catch(e){ return null; }
 }
+// Live display dos sliders
+['stability','similarity'].forEach(id=>{
+  const el=$('#'+id); const lbl=$('#'+(id==='stability'?'stabVal':'simVal'));
+  if(el&&lbl) el.addEventListener('input',()=>{ lbl.textContent=el.value+'%'; });
+});
+['stability','similarity'].forEach(id=>{
+  const el=$('#'+id); if(el) el.addEventListener('change',()=>{ state.scenes.forEach(s=>{ s.voiceBuf=null; }); });
+});
 
 async function fetchVoice(text, tries){
   if(!text) return null; tries=tries||0;
@@ -834,12 +854,12 @@ function drawSub(ctx,raw,W,H){
   const tokens=[];
   raw.split(/(\*[^*]+\*)/).forEach(seg=>{ if(!seg) return; const k=/^\*.*\*$/.test(seg);
     (k?seg.slice(1,-1):seg).split(/\s+/).forEach(w=>{ if(w) tokens.push({w:w.toUpperCase(),k}); }); });
-  ctx.font='bold 48px "Bebas Neue", sans-serif'; ctx.textBaseline='middle';
+  ctx.font='bold 56px "Bebas Neue", sans-serif'; ctx.textBaseline='middle';
   const maxW=W-80, space=ctx.measureText(' ').width+2, lines=[[]]; let lw=0;
   tokens.forEach(t=>{ const ww=ctx.measureText(t.w).width;
     if(lw+ww>maxW && lines[lines.length-1].length){ lines.push([]); lw=0; }
     lines[lines.length-1].push(t); lw+=ww+space; });
-  const lineH=54; let y=H*0.83-(lines.length-1)*lineH/2;
+  const lineH=58; let y=H*0.72-(lines.length-1)*lineH/2;
   ctx.lineWidth=9; ctx.strokeStyle='rgba(0,0,0,0.95)'; ctx.lineJoin='round'; ctx.textAlign='left';
   lines.forEach(line=>{ const tw=line.reduce((a,t)=>a+ctx.measureText(t.w).width+space,0)-space; let x=(W-tw)/2;
     line.forEach(t=>{ ctx.strokeText(t.w,x,y); ctx.fillStyle=t.k?'#ff6b78':'#ffffff'; ctx.fillText(t.w,x,y); x+=ctx.measureText(t.w).width+space; }); y+=lineH; });
